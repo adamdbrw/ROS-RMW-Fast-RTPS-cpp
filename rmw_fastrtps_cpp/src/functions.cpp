@@ -728,6 +728,7 @@ extern "C"
         publisherParam.topic.topicKind = NO_KEY;
         publisherParam.topic.topicDataType = type_name;
         publisherParam.topic.topicName = topic_name;
+        publisherParam.qos.m_publishMode.kind = ASYNCHRONOUS_PUBLISH_MODE;
 
         if(!get_datawriter_qos(*qos_policies, publisherParam))
             goto fail;

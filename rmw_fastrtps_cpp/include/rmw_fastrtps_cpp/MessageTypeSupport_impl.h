@@ -22,6 +22,7 @@
 #include <fastcdr/Cdr.h>
 
 #include <cassert>
+#include <limits>
 #include <memory>
 
 using namespace rmw_fastrtps_cpp;
@@ -38,10 +39,11 @@ MessageTypeSupport<MembersType>::MessageTypeSupport(const MembersType *members)
     std::string name = std::string(members->package_name_) + "::msg::dds_::" + members->message_name_ + "_";
     this->setName(name.c_str());
 
-    if(members->member_count_ != 0)
-        this->m_typeSize = static_cast<uint32_t>(this->calculateMaxSerializedSize(members, 0));
-    else
-        this->m_typeSize = 1;
+    // if(members->member_count_ != 0)
+    //     this->m_typeSize = static_cast<uint32_t>(this->calculateMaxSerializedSize(members, 0));
+    // else
+    //     this->m_typeSize = 1;
+    this->m_typeSize = std::numeric_limits<uint32_t>::max();
 }
 
 #endif // _RMW_FASTRTPS_CPP_MESSAGETYPESUPPORT_IMPL_H_
