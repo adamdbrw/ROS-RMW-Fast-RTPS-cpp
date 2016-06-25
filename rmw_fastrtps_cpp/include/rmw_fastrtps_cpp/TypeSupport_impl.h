@@ -60,7 +60,7 @@ template <typename MembersType>
 void TypeSupport<MembersType>::deleteData(void* data)
 {
     assert(data);
-    free(data);
+    delete static_cast<eprosima::fastcdr::FastBuffer *>(data);
 }
 
 static inline void*
@@ -832,33 +832,31 @@ size_t TypeSupport<MembersType>::calculateMaxSerializedSize(
 
 template <typename MembersType>
 bool TypeSupport<MembersType>::serializeROSmessage(
-    const void *ros_message, Buffer *buffer)
+    const void *ros_message, eprosima::fastcdr::FastBuffer *buffer)
 {
     assert(buffer);
     assert(ros_message);
 
     // eprosima::fastcdr::FastBuffer fastbuffer(buffer->pointer, m_typeSize);
-    eprosima::fastcdr::FastBuffer fastbuffer;
-    eprosima::fastcdr::Cdr ser(fastbuffer);
+    // eprosima::fastcdr::FastBuffer fastbuffer;
+    eprosima::fastcdr::Cdr ser(*buffer);
 
     if(members_->member_count_ != 0)
         TypeSupport::serializeROSmessage(ser, members_, ros_message);
     else
         ser << (uint8_t)0;
 
-    buffer->length = (uint32_t)ser.getSerializedDataLength();
     return true;
 }
 
 template <typename MembersType>
 bool TypeSupport<MembersType>::deserializeROSmessage(
-    const Buffer* buffer, void *ros_message)
+    eprosima::fastcdr::FastBuffer* buffer, void *ros_message)
 {
     assert(buffer);
     assert(ros_message);
 
-    eprosima::fastcdr::FastBuffer fastbuffer(buffer->pointer, buffer->length);
-    eprosima::fastcdr::Cdr deser(fastbuffer);
+    eprosima::fastcdr::Cdr deser(*buffer);
 
     if(members_->member_count_ != 0)
         TypeSupport::deserializeROSmessage(deser, members_, ros_message, false);
@@ -875,15 +873,7 @@ bool TypeSupport<MembersType>::deserializeROSmessage(
 template <typename MembersType>
 void* TypeSupport<MembersType>::createData()
 {
-    Buffer *buffer = static_cast<Buffer*>(malloc(sizeof(Buffer) + m_typeSize));
-
-    if(buffer)
-    {
-        buffer->length = 0;
-        buffer->pointer = (char*)(buffer + 1);
-    }
-
-    return buffer;
+    return new eprosima::fastcdr::FastBuffer();
 }
 
 template <typename MembersType>
@@ -893,10 +883,10 @@ bool TypeSupport<MembersType>::serialize(
     assert(data);
     assert(payload);
 
-    Buffer *buffer = static_cast<Buffer*>(data);
-    payload->length = buffer->length;
+    eprosima::fastcdr::FastBuffer *buffer = static_cast<eprosima::fastcdr::FastBuffer*>(data);
+    payload->length = buffer->getBufferSize();
     payload->encapsulation = CDR_LE;
-    memcpy(payload->data, buffer->pointer, buffer->length);
+    memcpy(payload->data, buffer->getBuffer(), buffer->getBufferSize());
     return true;
 }
 
@@ -906,9 +896,9 @@ bool TypeSupport<MembersType>::deserialize(SerializedPayload_t *payload, void *d
     assert(data);
     assert(payload);
 
-    Buffer *buffer = static_cast<Buffer*>(data);
-    buffer->length = payload->length;
-    memcpy(buffer->pointer, payload->data, payload->length);
+    eprosima::fastcdr::FastBuffer *buffer = static_cast<eprosima::fastcdr::FastBuffer*>(data);
+    buffer->resize(payload->length);
+    memcpy(buffer->getBuffer(), payload->data, payload->length);
     return true;
 }
 
